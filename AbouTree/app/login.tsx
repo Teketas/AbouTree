@@ -14,6 +14,7 @@ export default function LoginScreen() {
       const response = await apiClient.post("/auth/login", { email, password });
       await AsyncStorage.setItem("userToken", response.data.token);
       Alert.alert("Success", "Login successful!");
+      console.log("Your token:", response.data.token);
       router.replace("/(tabs)"); // Corrected the path here
 
     } catch (error: any) {
