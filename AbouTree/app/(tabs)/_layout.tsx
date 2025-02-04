@@ -4,6 +4,7 @@ import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { Pressable, View, Text, Modal, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import React from "react";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
