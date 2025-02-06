@@ -5,3 +5,47 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS Miskas (
+    id SERIAL PRIMARY KEY,
+    Pavadinimas VARCHAR(255) NOT NULL,
+    user_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS Sklypas (
+    id SERIAL PRIMARY KEY,
+    Plotas DOUBLE PRECISION NOT NULL,
+    Kubatura INTEGER NOT NULL,
+    Skalsumas DOUBLE PRECISION NOT NULL,
+    Rusine_sudetis DOUBLE PRECISION NOT NULL,
+    Aiksteliu_skaicius INTEGER NOT NULL,
+    miskas_id INTEGER NOT NULL,
+    FOREIGN KEY (miskas_id) REFERENCES Miskas(id)
+);
+
+CREATE TABLE IF NOT EXISTS Aikstele (
+    id SERIAL PRIMARY KEY,
+    Medziu_skaicius INTEGER NOT NULL,
+    Avg_amzius DOUBLE PRECISION NOT NULL,
+    Avg_aukstis DOUBLE PRECISION NOT NULL,
+    sklypas_id INTEGER NOT NULL,
+    FOREIGN KEY (sklypas_id) REFERENCES Sklypas(id)
+);
+
+CREATE TABLE IF NOT EXISTS Medis (
+    id SERIAL PRIMARY KEY,
+    Pavadinimas VARCHAR(255) NOT NULL,
+    Amzius INTEGER NOT NULL,
+    Aukstis INTEGER NOT NULL,
+    aikstele_id INTEGER NOT NULL,
+    FOREIGN KEY (aikstele_id) REFERENCES Aikstele(id)
+);
+
+CREATE TABLE IF NOT EXISTS Kubaturos_lentele (
+    id SERIAL PRIMARY KEY,
+    H INTEGER NOT NULL,
+    V INTEGER NOT NULL,
+    Hf DOUBLE PRECISION NOT NULL,
+    Amzius INTEGER NOT NULL
+);

@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const authRoutes = require("./routes/auth");
 const profileAuthRoutes = require("./routes/profileAuth"); // ✅ Import new profile route
+const miskasRoutes = require('./routes/miskas');
 require("dotenv").config();
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(bodyParser.json());
 // Connect Routes
 app.use("/auth", authRoutes);
 app.use("/auth", profileAuthRoutes); // ✅ Register the new profile route
+app.use('/api', miskasRoutes);
 
 // Default Route
 app.get("/", (req, res) => {
@@ -23,3 +25,5 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });
+
+module.exports = app;

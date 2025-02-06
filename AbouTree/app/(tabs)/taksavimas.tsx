@@ -23,32 +23,28 @@ interface Miskas {
 }
 
 export default function TaksavimasScreen() {
-  const [miskai, setMiskai] = useState([
-    {
-      id: 1,
-      pavadinimas: "Miškas 1",
-      galiutine_kubatura: "150.5",
-      skalsumas: "0.8",
-    },
-    {
-      id: 2,
-      pavadinimas: "Miškas 2",
-      galiutine_kubatura: "200.3",
-      skalsumas: "0.7",
-    },
-  ]);
-
+  const [miskai, setMiskai] = useState<Miskas[]>([]);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingMiskas, setEditingMiskas] = useState<Miskas | null>(null);
   const [isSklypoFormaVisible, setIsSklypoFormaVisible] = useState(false);
   const [selectedMiskoId, setSelectedMiskoId] = useState<number | null>(null);
 
+  // Gauti visus miškus
+  useEffect(() => {
+    const fetchMiskai = async () => {
+      try {
+        const response = await apiClient.get("/taksavimas");
+        setMiskai(response.data);
+      } catch (error) {
+        Alert.alert("Klaida", "Nepavyko gauti miškų sąrašo");
+      }
+    };
+    fetchMiskai();
+  }, []);
+
   const handleDelete = (id: number) => {
     Alert.alert("Patvirtinimas", "Ar tikrai norite ištrinti šį mišką?", [
-      {
-        text: "Atšaukti",
-        style: "cancel",
-      },
+      { text: "Atšaukti", style: "cancel" },
       {
         text: "Ištrinti",
         onPress: async () => {
@@ -66,8 +62,8 @@ export default function TaksavimasScreen() {
   };
 
   const handleEdit = (miskas: Miskas) => {
-    setSelectedMiskoId(miskas.id);
-    setIsSklypoFormaVisible(true);
+    setEditingMiskas(miskas);
+    setIsFormVisible(true);
   };
 
   const handleAdd = () => {
@@ -75,14 +71,16 @@ export default function TaksavimasScreen() {
     setIsFormVisible(true);
   };
 
-  const handleFormSubmit = async (formData: Miskas) => {
+  const handleFormSubmit = async (formData: { pavadinimas: string }) => {
     try {
       if (editingMiskas) {
         // Redagavimas
         await apiClient.put(`/taksavimas/${editingMiskas.id}`, formData);
         setMiskai(
           miskai.map((m) =>
-            m.id === editingMiskas.id ? { ...formData, id: m.id } : m
+            m.id === editingMiskas.id
+              ? { ...m, pavadinimas: formData.pavadinimas }
+              : m
           )
         );
         Alert.alert("Sėkmė", "Miškas sėkmingai atnaujintas");
@@ -92,6 +90,7 @@ export default function TaksavimasScreen() {
         setMiskai([...miskai, response.data]);
         Alert.alert("Sėkmė", "Miškas sėkmingai pridėtas");
       }
+      setIsFormVisible(false);
     } catch (error) {
       Alert.alert("Klaida", "Nepavyko išsaugoti duomenų");
     }
@@ -115,10 +114,6 @@ export default function TaksavimasScreen() {
             <Ionicons name="trash" size={20} color="#FF0000" />
           </TouchableOpacity>
         </View>
-      </View>
-      <View style={styles.miskoInfo}>
-        <Text style={styles.infoText}>Kubatūra: {item.galiutine_kubatura}</Text>
-        <Text style={styles.infoText}>Skalsumas: {item.skalsumas}</Text>
       </View>
     </View>
   );
