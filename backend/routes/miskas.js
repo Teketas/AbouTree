@@ -1,14 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const MiskasController = require('../taksavimas/MiskasController');
+const miskasController = require('../taksavimas/MiskasController');
+const jwt = require("jsonwebtoken");
+const auth = require('../middleware/auth');
 
 // Sukurti naują mišką
-router.post('/miskas', MiskasController.createMiskas);
+router.post('/sukurti-miskas', auth, (req, res) => miskasController.createMiskas(req, res));
 
 // Atnaujinti miško pavadinimą
-router.put('/miskas/:id', MiskasController.updateMiskasPavadinimas);
+router.put('/atnaujinti-miska/:id', (req, res) => miskasController.updateMiskasPavadinimas(req, res));
 
 // Gauti visus vartotojo miškus
-router.get('/miskas/user/:userId', MiskasController.getMiskasByUser);
+router.get('/user/:userId', (req, res) => miskasController.getMiskasByUser(req, res));
+
+// Ištrinti mišką
+router.delete('/istrinti-miska/:id', auth, (req, res) => miskasController.deleteMiskas(req, res));
 
 module.exports = router;

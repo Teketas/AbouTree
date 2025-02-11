@@ -14,6 +14,8 @@ import apiClient from "../../axiosConfig";
 import TaksavimoForma from "../../components/TaksavimoForma";
 import SklypoForma from "../../components/SklypoForma";
 import AikstelesForma from "../../components/AikstelesForma";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { jwtDecode } from "jwt-decode";
 
 interface Miskas {
   id: number;
@@ -33,33 +35,28 @@ export default function TaksavimasScreen() {
   useEffect(() => {
     const fetchMiskai = async () => {
       try {
-        const response = await apiClient.get("/taksavimas");
-        setMiskai(response.data);
+        // Gauname token'ą
+        const token = await AsyncStorage.getItem("userToken");
+        if (!token) {
+          console.log("Nėra token");
+          return;
+        }
+
+        // Ištraukiame userId iš token'o
+        const decoded: any = jwtDecode(token);
+        const userId = decoded.userId;
+
+        console.log("Bandoma gauti miškus userID:", userId);
+        const response = await apiClient.get(`/miskas/user/${userId}`);
+        console.log("Gauti miškai:", response.data);
+        setMiskai(response.data.data); // Pridėjau .data nes backend grąžina { success: true, data: [...] }
       } catch (error) {
+        console.error("Klaida:", error);
         Alert.alert("Klaida", "Nepavyko gauti miškų sąrašo");
       }
     };
     fetchMiskai();
   }, []);
-
-  const handleDelete = (id: number) => {
-    Alert.alert("Patvirtinimas", "Ar tikrai norite ištrinti šį mišką?", [
-      { text: "Atšaukti", style: "cancel" },
-      {
-        text: "Ištrinti",
-        onPress: async () => {
-          try {
-            await apiClient.delete(`/taksavimas/${id}`);
-            setMiskai(miskai.filter((miskas) => miskas.id !== id));
-            Alert.alert("Sėkmė", "Miškas sėkmingai ištrintas");
-          } catch (error) {
-            Alert.alert("Klaida", "Nepavyko ištrinti miško");
-          }
-        },
-        style: "destructive",
-      },
-    ]);
-  };
 
   const handleEdit = (miskas: Miskas) => {
     setEditingMiskas(miskas);
@@ -75,7 +72,10 @@ export default function TaksavimasScreen() {
     try {
       if (editingMiskas) {
         // Redagavimas
-        await apiClient.put(`/taksavimas/${editingMiskas.id}`, formData);
+        await apiClient.put(
+          `/miskas/atnaujinti-miska/${editingMiskas.id}`,
+          formData
+        );
         setMiskai(
           miskai.map((m) =>
             m.id === editingMiskas.id
@@ -86,14 +86,57 @@ export default function TaksavimasScreen() {
         Alert.alert("Sėkmė", "Miškas sėkmingai atnaujintas");
       } else {
         // Pridėjimas
-        const response = await apiClient.post("/taksavimas", formData);
-        setMiskai([...miskai, response.data]);
+        const token = await AsyncStorage.getItem("userToken");
+        const response = await apiClient.post(
+          "/miskas/sukurti-miskas",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setMiskai([...miskai, response.data.data]); // Pridėjau .data nes backend grąžina { success: true, data: [...] }
         Alert.alert("Sėkmė", "Miškas sėkmingai pridėtas");
       }
       setIsFormVisible(false);
     } catch (error) {
+      console.error("Klaida:", error);
       Alert.alert("Klaida", "Nepavyko išsaugoti duomenų");
     }
+  };
+
+  const handleDeleteMiskas = (id: number) => {
+    Alert.alert(
+      "Patvirtinimas",
+      "Ar tikrai norite ištrinti šį mišką?",
+      [
+        {
+          text: "Atšaukti",
+          style: "cancel",
+        },
+        {
+          text: "Ištrinti",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem("userToken");
+              await apiClient.delete(`/miskas/istrinti-miska/${id}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              setMiskai(miskai.filter((m) => m.id !== id));
+              Alert.alert("Sėkmė", "Miškas sėkmingai ištrintas");
+            } catch (error) {
+              console.error("Klaida ištrinant mišką:", error);
+              Alert.alert("Klaida", "Nepavyko ištrinti miško");
+            }
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const renderMiskas = ({ item }: { item: Miskas }) => (
@@ -108,7 +151,7 @@ export default function TaksavimasScreen() {
             <Ionicons name="pencil" size={20} color="#4CAF50" />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => handleDelete(item.id)}
+            onPress={() => handleDeleteMiskas(item.id)}
             style={styles.iconButton}
           >
             <Ionicons name="trash" size={20} color="#FF0000" />
