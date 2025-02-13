@@ -13,11 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 
 interface Sklypas {
   id: number;
-  plotas: string;
-  kubatura: string;
-  skalsumas: string;
-  rusineSudetis: string;
-  aiksteliuSkaicius: number;
+  plotas: number;
+  kubatura: number;
+  skalsumas: number;
+  rusine_sudetis: number;
+  aiksteliu_skaicius: number;
+  miskas_id: number;
 }
 
 interface SklypoFormaProps {
@@ -29,14 +30,10 @@ interface SklypoFormaProps {
     plotas: string;
     kubatura: string;
     skalsumas: string;
-    rusineSudetis: string;
-    aiksteliuSkaicius: number;
+    rusine_sudetis: string;
+    aiksteliu_skaicius: number;
     miskoId: number;
   }) => Promise<void>;
-  onUpdateSklypas: (
-    id: number,
-    data: { pavadinimas: string; plotas: string }
-  ) => Promise<void>;
   onDeleteSklypas: (id: number) => Promise<void>;
 }
 
@@ -46,15 +43,13 @@ export default function SklypoForma({
   miskoId,
   sklypai,
   onCreateSklypas,
-  onUpdateSklypas,
   onDeleteSklypas,
 }: SklypoFormaProps) {
   const [newSklypoData, setNewSklypoData] = useState({
     plotas: "",
     kubatura: "",
     skalsumas: "",
-    rusineSudetis: "",
-    aiksteliuSkaicius: 0,
+    rusine_sudetis: "",
   });
   const [isNewSklypoFormaVisible, setIsNewSklypoFormaVisible] = useState(false);
 
@@ -67,14 +62,14 @@ export default function SklypoForma({
     await onCreateSklypas({
       ...newSklypoData,
       miskoId: miskoId,
+      aiksteliu_skaicius: 0,
     });
 
     setNewSklypoData({
       plotas: "",
       kubatura: "",
       skalsumas: "",
-      rusineSudetis: "",
-      aiksteliuSkaicius: 0,
+      rusine_sudetis: "",
     });
     setIsNewSklypoFormaVisible(false);
   };
@@ -104,17 +99,11 @@ export default function SklypoForma({
         </View>
       </View>
       <Text style={styles.plotas}>Plotas: {item.plotas} ha</Text>
+      <Text style={styles.plotas}>Kubatūra: {item.kubatura} m³</Text>
+      <Text style={styles.plotas}>Skalsumas: {item.skalsumas}</Text>
+      <Text style={styles.plotas}>Rūšinė sudėtis: {item.rusine_sudetis}</Text>
       <Text style={styles.plotas}>
-        Kubatūra: {item.kubatura || "Neskaičiuota"} m³
-      </Text>
-      <Text style={styles.plotas}>
-        Skalsumas: {item.skalsumas || "Neskaičiuotas"}
-      </Text>
-      <Text style={styles.plotas}>
-        Rūšinė sudėtis: {item.rusineSudetis || "Neskaičiuota"}
-      </Text>
-      <Text style={styles.plotas}>
-        Aikštelių skaičius: {item.aiksteliuSkaicius}
+        Aikštelių skaičius: {item.aiksteliu_skaicius}
       </Text>
     </View>
   );
@@ -145,6 +134,7 @@ export default function SklypoForma({
         <Modal visible={isNewSklypoFormaVisible} animationType="slide">
           <View style={styles.container}>
             <Text style={styles.title}>Naujas sklypas</Text>
+
             <TextInput
               style={styles.input}
               placeholder="Plotas (ha)"
@@ -154,18 +144,48 @@ export default function SklypoForma({
               }
               keyboardType="numeric"
             />
+
             <TextInput
               style={styles.input}
-              placeholder="Aikštelių skaičius"
-              value={newSklypoData.aiksteliuSkaicius.toString()}
+              placeholder="Kubatūra (m³)"
+              value={newSklypoData.kubatura}
               onChangeText={(text) =>
-                setNewSklypoData((prev) => ({
-                  ...prev,
-                  aiksteliuSkaicius: parseInt(text) || 0,
-                }))
+                setNewSklypoData((prev) => ({ ...prev, kubatura: text }))
               }
               keyboardType="numeric"
             />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Skalsumas"
+              value={newSklypoData.skalsumas}
+              onChangeText={(text) =>
+                setNewSklypoData((prev) => ({ ...prev, skalsumas: text }))
+              }
+              keyboardType="numeric"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Rūšinė sudėtis"
+              value={newSklypoData.rusine_sudetis}
+              onChangeText={(text) =>
+                setNewSklypoData((prev) => ({ ...prev, rusine_sudetis: text }))
+              }
+            />
+
+            <TouchableOpacity
+              style={styles.pridetiAiksteleButton}
+              onPress={() =>
+                Alert.alert(
+                  "Info",
+                  "Aikštelių pridėjimas bus įgyvendintas vėliau"
+                )
+              }
+            >
+              <Text style={styles.buttonText}>Pridėti aikštelę</Text>
+            </TouchableOpacity>
+
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.cancelButton}
@@ -253,11 +273,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cancelButton: {
-    flex: 1,
-    backgroundColor: "#ff6b6b",
-    padding: 15,
+    backgroundColor: "#FF6B6B",
+    padding: 10,
     borderRadius: 8,
     alignItems: "center",
+    width: "30%",
+    alignSelf: "center",
+    marginTop: 10,
   },
   submitButton: {
     flex: 1,
@@ -268,7 +290,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     fontFamily: "SpaceMono",
   },
@@ -281,5 +303,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
     fontFamily: "SpaceMono",
+  },
+  pridetiAiksteleButton: {
+    backgroundColor: "#2196F3",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginVertical: 10,
   },
 });

@@ -3,12 +3,12 @@ const pool = require('../db');
 class SklypasController {
     // Sukurti naują sklypą
     async createSklypas(req, res) {
-        const { pavadinimas, plotas, miskoId } = req.body;
+        const { plotas, kubatura, skalsumas, rusine_sudetis, aiksteliu_skaicius, miskas_id } = req.body;
         
         try {
             const result = await pool.query(
-                'INSERT INTO Sklypas (pavadinimas, plotas, miskas_id) VALUES ($1, $2, $3) RETURNING *',
-                [pavadinimas, plotas, miskoId]
+                'INSERT INTO Sklypas (plotas, kubatura, skalsumas, rusine_sudetis, aiksteliu_skaicius, miskas_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                [plotas, kubatura, skalsumas, rusine_sudetis, aiksteliu_skaicius, miskas_id]
             );
 
             res.status(201).json({

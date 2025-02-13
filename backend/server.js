@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 
 // Connect Routes
-app.use('/api', sklypasRoutes);
+app.use('/sklypas', sklypasRoutes);
 app.use("/auth", authRoutes);
 app.use("/auth", profileAuthRoutes); // ✅ Register the new profile route
 app.use("/miskas", miskasRoutes);

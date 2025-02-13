@@ -26,12 +26,20 @@ interface Miskas {
 
 interface Sklypas {
   id: number;
-  pavadinimas: string;
+  plotas: number;
+  kubatura: number;
+  skalsumas: number;
+  rusine_sudetis: number;
+  aiksteliu_skaicius: number;
+  miskas_id: number;
+}
+
+interface CreateSklypoData {
   plotas: string;
   kubatura: string;
   skalsumas: string;
-  rusineSudetis: string;
-  aiksteliuSkaicius: number;
+  rusine_sudetis: string;
+  miskoId: number;
 }
 
 export default function TaksavimasScreen() {
@@ -115,61 +123,61 @@ export default function TaksavimasScreen() {
   const getSklypai = async (miskoId: number) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-
-      // Patikriname ar token'as yra
       if (!token) {
         console.log("No token found");
         return;
       }
 
-      console.log("Using token:", token);
+      console.log("Trying to fetch sklypai with miskoId:", miskoId);
+      const response = await apiClient.get(
+        `/sklypas/sklypai/miskas/${miskoId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      const response = await apiClient.get(`/api/sklypai/miskas/${miskoId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // įsitikiname, kad tarpas po 'Bearer' yra
-          "Content-Type": "application/json",
-        },
-      });
-
+      console.log("Response:", response.data);
       const sklypoData = response.data.data || [];
       setSklypai(sklypoData);
     } catch (error: any) {
-      console.error("Error with token:", error.response?.data);
-      if (error.response?.status === 403) {
-        // Jei token'as negalioja, galime nukreipti vartotoją į prisijungimo puslapį
-        Alert.alert("Sesija pasibaigė", "Prašome prisijungti iš naujo");
-        // Čia galite pridėti logiką grįžimui į login ekraną
-      } else {
-        setSklypai([]);
-      }
+      console.error("Full error:", error);
+      console.error("Response data:", error.response?.data);
+      console.error("Status:", error.response?.status);
+      setSklypai([]);
     }
   };
 
-  const createSklypas = async (data: {
-    plotas: string;
-    kubatura: string;
-    skalsumas: string;
-    rusineSudetis: string;
-    aiksteliuSkaicius: number;
-    miskoId: number;
-  }) => {
+  const createSklypas = async (data: CreateSklypoData) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
+
+      const requestData = {
+        plotas: parseFloat(data.plotas),
+        kubatura: parseInt(data.kubatura) || 0,
+        skalsumas: parseFloat(data.skalsumas) || 0,
+        rusine_sudetis: parseFloat(data.rusine_sudetis) || 0,
+        aiksteliu_skaicius: 0,
+        miskas_id: data.miskoId,
+      };
+
       const response = await apiClient.post(
-        "/api/sukurti-sklypa",
+        "/sklypas/sukurti-sklypa",
+        requestData,
         {
-          ...data,
-          kubatura: data.kubatura || "0",
-          skalsumas: data.skalsumas || "0",
-          rusineSudetis: data.rusineSudetis || "0",
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
-      setSklypai([...sklypai, response.data.data]);
+
+      setSklypai((prev) => [...prev, response.data.data]);
       Alert.alert("Sėkmė", "Sklypas sėkmingai pridėtas");
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error:", error.response?.data);
       Alert.alert("Klaida", "Nepavyko pridėti sklypo");
     }
   };
@@ -180,12 +188,14 @@ export default function TaksavimasScreen() {
   ) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      const response = await apiClient.put(`/atnaujinti-sklypa/${id}`, data, {
+      await apiClient.put(`/sklypas/atnaujinti-sklypa/${id}`, data, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSklypai(
         sklypai.map((sklypas) =>
-          sklypas.id === id ? { ...sklypas, ...data } : sklypas
+          sklypas.id === id
+            ? { ...sklypas, plotas: parseFloat(data.plotas) }
+            : sklypas
         )
       );
       Alert.alert("Sėkmė", "Sklypas sėkmingai atnaujintas");
@@ -197,7 +207,7 @@ export default function TaksavimasScreen() {
   const deleteSklypas = async (id: number) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
-      await apiClient.delete(`/istrinti-sklypa/${id}`, {
+      await apiClient.delete(`/sklypas/istrinti-sklypa/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSklypai(sklypai.filter((sklypas) => sklypas.id !== id));
@@ -346,7 +356,6 @@ export default function TaksavimasScreen() {
         miskoId={selectedMiskoId}
         sklypai={sklypai}
         onCreateSklypas={createSklypas}
-        onUpdateSklypas={updateSklypas}
         onDeleteSklypas={deleteSklypas}
       />
     </View>
