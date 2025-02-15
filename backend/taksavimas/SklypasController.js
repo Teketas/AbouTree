@@ -52,13 +52,14 @@ class SklypasController {
     // Atnaujinti sklypą
     async updateSklypas(req, res) {
         const { id } = req.params;
-        const { pavadinimas, plotas, kubatura, skalsumas, rusineSudetis } = req.body;
+        const { plotas, kubatura, skalsumas, rusine_sudetis } = req.body;
 
         try {
             const result = await pool.query(
-                'UPDATE Sklypas SET pavadinimas = $1, plotas = $2, kubatura = $3, skalsumas = $4, rusine_sudetis = $5 WHERE id = $6 RETURNING *',
-                [pavadinimas, plotas, kubatura, skalsumas, rusineSudetis, id]
-            );
+                'UPDATE Sklypas SET plotas = $1, kubatura = $2, skalsumas = $3, rusine_sudetis = $4 WHERE id = $5 RETURNING *',
+                [plotas, kubatura, skalsumas, rusine_sudetis, id]
+              );
+              
 
             if (result.rows.length === 0) {
                 return res.status(404).json({

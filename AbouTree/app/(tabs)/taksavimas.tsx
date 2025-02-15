@@ -184,7 +184,7 @@ export default function TaksavimasScreen() {
 
   const updateSklypas = async (
     id: number,
-    data: { pavadinimas: string; plotas: string }
+    data: { plotas: string; kubatura: string; skalsumas: string; rusine_sudetis: string }
   ) => {
     try {
       const token = await AsyncStorage.getItem("userToken");
@@ -194,7 +194,13 @@ export default function TaksavimasScreen() {
       setSklypai(
         sklypai.map((sklypas) =>
           sklypas.id === id
-            ? { ...sklypas, plotas: parseFloat(data.plotas) }
+            ? { 
+                ...sklypas, 
+                plotas: parseFloat(data.plotas),
+                kubatura: parseFloat(data.kubatura), 
+                skalsumas: parseFloat(data.skalsumas), 
+                rusine_sudetis: parseFloat(data.rusine_sudetis)
+              }
             : sklypas
         )
       );
@@ -357,6 +363,7 @@ export default function TaksavimasScreen() {
         sklypai={sklypai}
         onCreateSklypas={createSklypas}
         onDeleteSklypas={deleteSklypas}
+        onUpdateSklypas={updateSklypas} 
       />
     </View>
   );

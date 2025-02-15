@@ -27,6 +27,7 @@ interface SklypoFormaProps {
   miskoId: number | null;
   sklypai: Sklypas[];
   onCreateSklypas: (data: {
+    id?: number;
     plotas: string;
     kubatura: string;
     skalsumas: string;
@@ -35,6 +36,12 @@ interface SklypoFormaProps {
     miskoId: number;
   }) => Promise<void>;
   onDeleteSklypas: (id: number) => Promise<void>;
+  onUpdateSklypas: (id: number, data: {
+    plotas: string;
+    kubatura: string;
+    skalsumas: string;
+    rusine_sudetis: string;
+  }) => Promise<void>;
 }
 
 export default function SklypoForma({
@@ -44,56 +51,79 @@ export default function SklypoForma({
   sklypai,
   onCreateSklypas,
   onDeleteSklypas,
+  onUpdateSklypas,
 }: SklypoFormaProps) {
-  const [newSklypoData, setNewSklypoData] = useState({
+  const [formData, setFormData] = useState({
     plotas: "",
     kubatura: "",
     skalsumas: "",
     rusine_sudetis: "",
   });
-  const [isNewSklypoFormaVisible, setIsNewSklypoFormaVisible] = useState(false);
 
-  const handleAddSklypas = async () => {
-    if (!newSklypoData.plotas || !miskoId) {
-      Alert.alert("Klaida", "Užpildykite bent plotą");
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingSklypas, setEditingSklypas] = useState<Sklypas | null>(null);
+
+  // Resets form
+  const resetForm = () => {
+    setFormData({ plotas: "", kubatura: "", skalsumas: "", rusine_sudetis: "" });
+    setEditingSklypas(null);
+    setIsModalVisible(false);
+  };
+
+  // Handles adding or updating a Sklypas
+  const handleSaveSklypas = async () => {
+    if (!formData.plotas || !miskoId) {
+      Alert.alert("Klaida", "Užpildykite visus laukus.");
       return;
     }
 
-    await onCreateSklypas({
-      ...newSklypoData,
-      miskoId: miskoId,
-      aiksteliu_skaicius: 0,
-    });
+    if (editingSklypas) {
+      // Update existing Sklypas
+      await onUpdateSklypas(editingSklypas.id, formData);
+      Alert.alert("Sėkmė", "Sklypas atnaujintas");
+    } else {
+      // Create new Sklypas
+      await onCreateSklypas({
+        ...formData,
+        miskoId: miskoId,
+        aiksteliu_skaicius: 0,
+      });
+      Alert.alert("Sėkmė", "Naujas sklypas pridėtas");
+    }
 
-    setNewSklypoData({
-      plotas: "",
-      kubatura: "",
-      skalsumas: "",
-      rusine_sudetis: "",
-    });
-    setIsNewSklypoFormaVisible(false);
+    resetForm();
   };
 
+  // Handles deleting a Sklypas
   const handleDeleteSklypas = (id: number) => {
     Alert.alert("Patvirtinimas", "Ar tikrai norite ištrinti šį sklypą?", [
       { text: "Atšaukti", style: "cancel" },
-      {
-        text: "Ištrinti",
-        onPress: () => onDeleteSklypas(id),
-        style: "destructive",
-      },
+      { text: "Ištrinti", onPress: () => onDeleteSklypas(id), style: "destructive" },
     ]);
   };
 
+  // Handles editing a Sklypas
+  const handleEditSklypas = (sklypas: Sklypas) => {
+    setEditingSklypas(sklypas);
+    setFormData({
+      plotas: sklypas.plotas.toString(),
+      kubatura: sklypas.kubatura.toString(),
+      skalsumas: sklypas.skalsumas.toString(),
+      rusine_sudetis: sklypas.rusine_sudetis.toString(),
+    });
+    setIsModalVisible(true);
+  };
+
+  // Renders a Sklypas item
   const renderSklypas = ({ item }: { item: Sklypas }) => (
     <View style={styles.sklypoKorta}>
       <View style={styles.sklypoHeader}>
         <Text style={styles.sklypoId}>Sklypas #{item.id}</Text>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={() => handleDeleteSklypas(item.id)}
-            style={styles.iconButton}
-          >
+          <TouchableOpacity onPress={() => handleEditSklypas(item)} style={styles.iconButton}>
+            <Ionicons name="pencil" size={20} color="#4CAF50" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDeleteSklypas(item.id)} style={styles.iconButton}>
             <Ionicons name="trash" size={20} color="#FF0000" />
           </TouchableOpacity>
         </View>
@@ -102,9 +132,6 @@ export default function SklypoForma({
       <Text style={styles.plotas}>Kubatūra: {item.kubatura} m³</Text>
       <Text style={styles.plotas}>Skalsumas: {item.skalsumas}</Text>
       <Text style={styles.plotas}>Rūšinė sudėtis: {item.rusine_sudetis}</Text>
-      <Text style={styles.plotas}>
-        Aikštelių skaičius: {item.aiksteliu_skaicius}
-      </Text>
     </View>
   );
 
@@ -113,93 +140,58 @@ export default function SklypoForma({
       <View style={styles.container}>
         <Text style={styles.title}>Sklypo informacija</Text>
 
-        <TouchableOpacity
-          style={styles.pridetiButton}
-          onPress={() => setIsNewSklypoFormaVisible(true)}
-        >
+        <TouchableOpacity style={styles.pridetiButton} onPress={() => setIsModalVisible(true)}>
           <Text style={styles.buttonText}>Pridėti naują sklypą</Text>
         </TouchableOpacity>
 
         {sklypai.length === 0 ? (
           <Text style={styles.emptyText}>Nėra pridėtų sklypų</Text>
         ) : (
-          <FlatList
-            data={sklypai}
-            renderItem={renderSklypas}
-            keyExtractor={(item) => item.id.toString()}
-            style={styles.sklypoList}
-          />
+          <FlatList data={sklypai} renderItem={renderSklypas} keyExtractor={(item) => item.id.toString()} />
         )}
 
-        <Modal visible={isNewSklypoFormaVisible} animationType="slide">
+        <Modal visible={isModalVisible} animationType="slide">
           <View style={styles.container}>
-            <Text style={styles.title}>Naujas sklypas</Text>
+            <Text style={styles.title}>{editingSklypas ? "Redaguoti sklypą" : "Naujas sklypas"}</Text>
 
             <TextInput
               style={styles.input}
               placeholder="Plotas (ha)"
-              value={newSklypoData.plotas}
-              onChangeText={(text) =>
-                setNewSklypoData((prev) => ({ ...prev, plotas: text }))
-              }
+              value={formData.plotas}
+              onChangeText={(text) => setFormData({ ...formData, plotas: text })}
               keyboardType="numeric"
             />
 
             <TextInput
               style={styles.input}
               placeholder="Kubatūra (m³)"
-              value={newSklypoData.kubatura}
-              onChangeText={(text) =>
-                setNewSklypoData((prev) => ({ ...prev, kubatura: text }))
-              }
+              value={formData.kubatura}
+              onChangeText={(text) => setFormData({ ...formData, kubatura: text })}
               keyboardType="numeric"
             />
 
             <TextInput
               style={styles.input}
               placeholder="Skalsumas"
-              value={newSklypoData.skalsumas}
-              onChangeText={(text) =>
-                setNewSklypoData((prev) => ({ ...prev, skalsumas: text }))
-              }
+              value={formData.skalsumas}
+              onChangeText={(text) => setFormData({ ...formData, skalsumas: text })}
               keyboardType="numeric"
             />
 
             <TextInput
               style={styles.input}
               placeholder="Rūšinė sudėtis"
-              value={newSklypoData.rusine_sudetis}
-              onChangeText={(text) =>
-                setNewSklypoData((prev) => ({ ...prev, rusine_sudetis: text }))
-              }
+              value={formData.rusine_sudetis}
+              onChangeText={(text) => setFormData({ ...formData, rusine_sudetis: text })}
             />
 
-            <TouchableOpacity
-              style={styles.pridetiAiksteleButton}
-              onPress={() =>
-                Alert.alert(
-                  "Info",
-                  "Aikštelių pridėjimas bus įgyvendintas vėliau"
-                )
-              }
-            >
-              <Text style={styles.buttonText}>Pridėti aikštelę</Text>
+            <TouchableOpacity style={styles.submitButton} onPress={handleSaveSklypas}>
+              <Text style={styles.buttonText}>{editingSklypas ? "Atnaujinti" : "Pridėti"}</Text>
             </TouchableOpacity>
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setIsNewSklypoFormaVisible(false)}
-              >
-                <Text style={styles.buttonText}>Atšaukti</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleAddSklypas}
-              >
-                <Text style={styles.buttonText}>Pridėti</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
+              <Text style={styles.buttonText}>Uždaryti</Text>
+            </TouchableOpacity>
           </View>
         </Modal>
 
@@ -210,6 +202,8 @@ export default function SklypoForma({
     </Modal>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -282,11 +276,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   submitButton: {
-    flex: 1,
     backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
+    marginBottom: 10,
   },
   buttonText: {
     color: "white",
