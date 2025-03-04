@@ -43,3 +43,8 @@ SELECT * FROM users; // Retrieves all data from the "users" table in PostgreSQL.
 \dt // Lists all tables in the current PostgreSQL database.
 
 DROP TABLE users; // Deletes the "users" table in PostgreSQL.
+
+
+\dt - perziureti lenteles
+
+\d lenteles_pavadinimas - perziureti kintamuosius ir t.t
