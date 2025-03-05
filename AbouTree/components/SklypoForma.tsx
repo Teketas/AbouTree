@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AikstelesForma from "./AikstelesForma";
 
 interface Sklypas {
   id: number;
@@ -19,6 +20,11 @@ interface Sklypas {
   rusine_sudetis: number;
   aiksteliu_skaicius: number;
   miskas_id: number;
+}
+
+interface Aikstele {
+  id: number;
+  sklypas_id: number;
 }
 
 interface SklypoFormaProps {
@@ -36,12 +42,19 @@ interface SklypoFormaProps {
     miskoId: number;
   }) => Promise<void>;
   onDeleteSklypas: (id: number) => Promise<void>;
-  onUpdateSklypas: (id: number, data: {
-    plotas: string;
-    kubatura: string;
-    skalsumas: string;
-    rusine_sudetis: string;
-  }) => Promise<void>;
+  onUpdateSklypas: (
+    id: number,
+    data: {
+      plotas: string;
+      kubatura: string;
+      skalsumas: string;
+      rusine_sudetis: string;
+    }
+  ) => Promise<void>;
+  onSklypoClick: (sklypoId: number) => void;
+  aiksteles: Aikstele[];
+  onCreateAikstele: (sklypoId: number) => Promise<void>;
+  onDeleteAikstele: (aiksteleId: number) => Promise<void>;
 }
 
 export default function SklypoForma({
@@ -52,6 +65,10 @@ export default function SklypoForma({
   onCreateSklypas,
   onDeleteSklypas,
   onUpdateSklypas,
+  onSklypoClick,
+  aiksteles,
+  onCreateAikstele,
+  onDeleteAikstele,
 }: SklypoFormaProps) {
   const [formData, setFormData] = useState({
     plotas: "",
@@ -62,10 +79,17 @@ export default function SklypoForma({
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSklypas, setEditingSklypas] = useState<Sklypas | null>(null);
+  const [selectedSklypoId, setSelectedSklypoId] = useState<number | null>(null);
+  const [isAikstelesFormaVisible, setIsAikstelesFormaVisible] = useState(false);
 
   // Resets form
   const resetForm = () => {
-    setFormData({ plotas: "", kubatura: "", skalsumas: "", rusine_sudetis: "" });
+    setFormData({
+      plotas: "",
+      kubatura: "",
+      skalsumas: "",
+      rusine_sudetis: "",
+    });
     setEditingSklypas(null);
     setIsModalVisible(false);
   };
@@ -98,7 +122,11 @@ export default function SklypoForma({
   const handleDeleteSklypas = (id: number) => {
     Alert.alert("Patvirtinimas", "Ar tikrai norite ištrinti šį sklypą?", [
       { text: "Atšaukti", style: "cancel" },
-      { text: "Ištrinti", onPress: () => onDeleteSklypas(id), style: "destructive" },
+      {
+        text: "Ištrinti",
+        onPress: () => onDeleteSklypas(id),
+        style: "destructive",
+      },
     ]);
   };
 
@@ -114,24 +142,51 @@ export default function SklypoForma({
     setIsModalVisible(true);
   };
 
+  const handleSklypoPress = (sklypoId: number) => {
+    setSelectedSklypoId(sklypoId);
+    setIsAikstelesFormaVisible(true);
+  };
+
   // Renders a Sklypas item
   const renderSklypas = ({ item }: { item: Sklypas }) => (
     <View style={styles.sklypoKorta}>
-      <View style={styles.sklypoHeader}>
-        <Text style={styles.sklypoId}>Sklypas #{item.id}</Text>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={() => handleEditSklypas(item)} style={styles.iconButton}>
-            <Ionicons name="pencil" size={20} color="#4CAF50" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDeleteSklypas(item.id)} style={styles.iconButton}>
-            <Ionicons name="trash" size={20} color="#FF0000" />
-          </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.sklypoContent}
+        onPress={() => onSklypoClick(item.id)}
+      >
+        <View style={styles.sklypoInfo}>
+          <Text style={styles.sklypoId}>Sklypas #{item.id}</Text>
+          <Text style={styles.infoText}>Plotas: {item.plotas} ha</Text>
+          <Text style={styles.infoText}>Kubatūra: {item.kubatura} m³</Text>
+          <Text style={styles.infoText}>Skalsumas: {item.skalsumas}</Text>
+          <Text style={styles.infoText}>
+            Rūšinė sudėtis: {item.rusine_sudetis}
+          </Text>
+          <Text style={styles.infoText}>
+            Aikštelių skaičius: {item.aiksteliu_skaicius}
+          </Text>
         </View>
+      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => handleEditSklypas(item)}
+        >
+          <Text style={styles.buttonText}>Redaguoti</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteSklypas(item.id)}
+        >
+          <Text style={styles.buttonText}>Ištrinti</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.aikstelesButton}
+          onPress={() => handleSklypoPress(item.id)}
+        >
+          <Text style={styles.buttonText}>Aikštelės</Text>
+        </TouchableOpacity>
       </View>
-      <Text style={styles.plotas}>Plotas: {item.plotas} ha</Text>
-      <Text style={styles.plotas}>Kubatūra: {item.kubatura} m³</Text>
-      <Text style={styles.plotas}>Skalsumas: {item.skalsumas}</Text>
-      <Text style={styles.plotas}>Rūšinė sudėtis: {item.rusine_sudetis}</Text>
     </View>
   );
 
@@ -140,25 +195,36 @@ export default function SklypoForma({
       <View style={styles.container}>
         <Text style={styles.title}>Sklypo informacija</Text>
 
-        <TouchableOpacity style={styles.pridetiButton} onPress={() => setIsModalVisible(true)}>
+        <TouchableOpacity
+          style={styles.pridetiButton}
+          onPress={() => setIsModalVisible(true)}
+        >
           <Text style={styles.buttonText}>Pridėti naują sklypą</Text>
         </TouchableOpacity>
 
         {sklypai.length === 0 ? (
           <Text style={styles.emptyText}>Nėra pridėtų sklypų</Text>
         ) : (
-          <FlatList data={sklypai} renderItem={renderSklypas} keyExtractor={(item) => item.id.toString()} />
+          <FlatList
+            data={sklypai}
+            renderItem={renderSklypas}
+            keyExtractor={(item) => item.id.toString()}
+          />
         )}
 
         <Modal visible={isModalVisible} animationType="slide">
           <View style={styles.container}>
-            <Text style={styles.title}>{editingSklypas ? "Redaguoti sklypą" : "Naujas sklypas"}</Text>
+            <Text style={styles.title}>
+              {editingSklypas ? "Redaguoti sklypą" : "Naujas sklypas"}
+            </Text>
 
             <TextInput
               style={styles.input}
               placeholder="Plotas (ha)"
               value={formData.plotas}
-              onChangeText={(text) => setFormData({ ...formData, plotas: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, plotas: text })
+              }
               keyboardType="numeric"
             />
 
@@ -166,7 +232,9 @@ export default function SklypoForma({
               style={styles.input}
               placeholder="Kubatūra (m³)"
               value={formData.kubatura}
-              onChangeText={(text) => setFormData({ ...formData, kubatura: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, kubatura: text })
+              }
               keyboardType="numeric"
             />
 
@@ -174,7 +242,9 @@ export default function SklypoForma({
               style={styles.input}
               placeholder="Skalsumas"
               value={formData.skalsumas}
-              onChangeText={(text) => setFormData({ ...formData, skalsumas: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, skalsumas: text })
+              }
               keyboardType="numeric"
             />
 
@@ -182,11 +252,18 @@ export default function SklypoForma({
               style={styles.input}
               placeholder="Rūšinė sudėtis"
               value={formData.rusine_sudetis}
-              onChangeText={(text) => setFormData({ ...formData, rusine_sudetis: text })}
+              onChangeText={(text) =>
+                setFormData({ ...formData, rusine_sudetis: text })
+              }
             />
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSaveSklypas}>
-              <Text style={styles.buttonText}>{editingSklypas ? "Atnaujinti" : "Pridėti"}</Text>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSaveSklypas}
+            >
+              <Text style={styles.buttonText}>
+                {editingSklypas ? "Atnaujinti" : "Pridėti"}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
@@ -195,6 +272,15 @@ export default function SklypoForma({
           </View>
         </Modal>
 
+        <AikstelesForma
+          visible={isAikstelesFormaVisible}
+          onClose={() => setIsAikstelesFormaVisible(false)}
+          sklypoId={selectedSklypoId}
+          aiksteles={aiksteles}
+          onCreateAikstele={onCreateAikstele}
+          onDeleteAikstele={onDeleteAikstele}
+        />
+
         <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
           <Text style={styles.buttonText}>Uždaryti</Text>
         </TouchableOpacity>
@@ -202,8 +288,6 @@ export default function SklypoForma({
     </Modal>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -223,15 +307,16 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   sklypoKorta: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "white",
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
   },
-  sklypoHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  sklypoContent: {
+    marginBottom: 10,
+  },
+  sklypoInfo: {
+    marginBottom: 10,
   },
   sklypoId: {
     fontSize: 18,
@@ -240,7 +325,7 @@ const styles = StyleSheet.create({
     fontFamily: "SpaceMono",
     color: "#4CAF50",
   },
-  plotas: {
+  infoText: {
     fontSize: 14,
     color: "#666",
     fontFamily: "SpaceMono",
@@ -257,7 +342,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 10,
-    marginTop: 10,
   },
   pridetiButton: {
     backgroundColor: "#4CAF50",
@@ -288,8 +372,23 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "SpaceMono",
   },
-  iconButton: {
-    padding: 5,
+  editButton: {
+    backgroundColor: "#2196F3",
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+  },
+  deleteButton: {
+    backgroundColor: "#FF0000",
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
+  },
+  aikstelesButton: {
+    backgroundColor: "#2196F3",
+    padding: 8,
+    borderRadius: 5,
+    flex: 1,
   },
   emptyText: {
     textAlign: "center",

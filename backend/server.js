@@ -4,6 +4,9 @@ const authRoutes = require("./routes/auth");
 const profileAuthRoutes = require("./routes/profileAuth"); // ✅ Import new profile route
 const miskasRoutes = require("./routes/miskas");
 const sklypasRoutes = require('./routes/sklypas');
+const aiksteleRoutes = require('./routes/aikstele');
+const medisRoutes = require('./routes/medis');
+const rusisRoutes = require('./routes/rusis');
 require("dotenv").config();
 
 const app = express();
@@ -17,6 +20,9 @@ app.use('/sklypas', sklypasRoutes);
 app.use("/auth", authRoutes);
 app.use("/auth", profileAuthRoutes); // ✅ Register the new profile route
 app.use("/miskas", miskasRoutes);
+app.use('/aikstele', aiksteleRoutes);
+app.use('/medis', medisRoutes);
+app.use('/rusis', rusisRoutes);
 
 // Default Route
 app.get("/", (req, res) => {

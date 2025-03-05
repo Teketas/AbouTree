@@ -21,25 +21,31 @@ CREATE TABLE IF NOT EXISTS Sklypas (
     Rusine_sudetis DOUBLE PRECISION NOT NULL,
     Aiksteliu_skaicius INTEGER NOT NULL,
     miskas_id INTEGER NOT NULL,
-    FOREIGN KEY (miskas_id) REFERENCES Miskas(id)
+    FOREIGN KEY (miskas_id) REFERENCES Miskas(id) ON DELETE CASCADE 
 );
 
 CREATE TABLE IF NOT EXISTS Aikstele (
     id SERIAL PRIMARY KEY,
-    Medziu_skaicius INTEGER NOT NULL,
-    Avg_amzius DOUBLE PRECISION NOT NULL,
-    Avg_aukstis DOUBLE PRECISION NOT NULL,
     sklypas_id INTEGER NOT NULL,
-    FOREIGN KEY (sklypas_id) REFERENCES Sklypas(id)
+    FOREIGN KEY (sklypas_id) REFERENCES Sklypas(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Rusis (
+    id SERIAL PRIMARY KEY,
+    pavadinimas TEXT NOT NULL,
+    medziu_sk INTEGER NOT NULL,
+    avg_amzius DOUBLE PRECISION NOT NULL,
+    avg_aukstis DOUBLE PRECISION NOT NULL,
+    aikstele_id INTEGER NOT NULL,
+    FOREIGN KEY (aikstele_id) REFERENCES aikstele(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Medis (
     id SERIAL PRIMARY KEY,
-    Pavadinimas VARCHAR(255) NOT NULL,
-    Amzius INTEGER NOT NULL,
-    Aukstis INTEGER NOT NULL,
-    aikstele_id INTEGER NOT NULL,
-    FOREIGN KEY (aikstele_id) REFERENCES Aikstele(id)
+    Amzius INTEGER,
+    Aukstis INTEGER,
+    rusis_id INTEGER NOT NULL,
+    FOREIGN KEY (rusis_id) REFERENCES Rusis(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS Kubaturos_lentele (
