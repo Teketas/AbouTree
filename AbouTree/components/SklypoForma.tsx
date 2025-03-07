@@ -279,6 +279,14 @@ export default function SklypoForma({
           aiksteles={aiksteles}
           onCreateAikstele={onCreateAikstele}
           onDeleteAikstele={onDeleteAikstele}
+          rusys={[]}
+          onGetRusys={() => Promise.resolve()}
+          onCreateRusis={() => Promise.resolve()}
+          onDeleteRusis={() => Promise.resolve()}
+          medziai={[]}
+          onGetMedziai={() => Promise.resolve()}
+          onCreateMedis={() => Promise.resolve()}
+          onDeleteMedis={() => Promise.resolve()}
         />
 
         <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
